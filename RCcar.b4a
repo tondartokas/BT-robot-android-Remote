@@ -1,0 +1,219 @@
+﻿Version=7.01
+NumberOfModules=1
+Module1=Starter
+Build1=Default,b4a.example
+ManifestCode='This code will be applied to the manifest file during compilation.~\n~'You do not need to modify it in most cases.~\n~'See this link for for more information: https://www.b4x.com/forum/showthread.php?p=78136~\n~AddManifestText(~\n~<uses-sdk android:minSdkVersion="5" android:targetSdkVersion="19"/>~\n~<supports-screens android:largeScreens="true" ~\n~    android:normalScreens="true" ~\n~    android:smallScreens="true" ~\n~    android:anyDensity="true"/>)~\n~SetApplicationAttribute(android:icon, "@drawable/icon")~\n~SetApplicationAttribute(android:label, "$LABEL$")~\n~'End of default text.~\n~AddPermission(com.sec.android.provider.badge.permission.READ)~\n~AddPermission(com.sec.android.provider.badge.permission.WRITE)
+IconFile=
+NumberOfFiles=7
+File1=control.bal
+File2=down.png
+File3=left.png
+File4=right.png
+File5=up.png
+File6=up_red.jpg
+File7=upred.png
+NumberOfLibraries=2
+Library1=core
+Library2=serial
+@EndOfDesignText@
+#Region  Project Attributes 
+	#ApplicationLabel: RCCAR
+	#VersionCode: 1
+	#VersionName: 
+	'SupportedOrientations possible values: unspecified, landscape or portrait.
+	#SupportedOrientations: landscape
+	#CanInstallToExternalStorage: False
+#End Region
+
+#Region  Activity Attributes 
+	#FullScreen: False
+	#IncludeTitle: True
+#End Region
+
+Sub Process_Globals
+	'These global variables will be declared once when the application starts.
+	'These variables can be accessed from all modules.
+	Dim Serial1 As Serial
+	'Dim Timer1 As Timer
+	Dim connected As Boolean
+	Dim TextWiter1 As TextWriter	
+End Sub
+
+Sub Globals
+	'These global variables will be redeclared each time the activity is created.
+	'These variables can only be accessed from this module.
+	Private p_UP As Panel		
+	Private P_Down As Panel
+	Private p_Left As Panel
+	Private p_Right As Panel
+	
+	'Private Label1 As Label
+	Private Label1 As Label
+End Sub
+
+Sub Activity_Create(FirstTime As Boolean)
+	'Do not forget to load the layout file created with the visual designer. For example:
+	'Activity.LoadLayout("Layout1")
+	If FirstTime Then
+		Serial1.Initialize("serial1")
+		'Timer1.Initialize("Timer1", 200)
+	End If
+	Activity.LoadLayout("control")
+	Activity.AddMenuItem("Connect","mnuConnect")
+	Activity.AddMenuItem("Disconnect","mnuDisconnect")
+	Activity.AddMenuItem("About","mnuAbout")
+	Activity.AddMenuItem("Exit","mnuExit")
+End Sub
+
+Sub Activity_Resume
+	If Serial1.IsEnabled = False Then
+		Msgbox("Please Enable Blutooth","Error")
+	Else
+		Serial1.Listen'listen for incoming connections
+	End If
+End Sub
+
+Sub Activity_Pause (UserClosed As Boolean)
+
+End Sub
+
+Sub mnuConnect_Click
+	Dim PairedDevices As Map
+	PairedDevices = Serial1.GetPairedDevices
+	Dim l As List
+	Dim res As Int
+	l.Initialize
+	For i=0 To PairedDevices.Size -1
+		l.Add(PairedDevices.GetKeyAt(i))
+	Next	
+	res =InputList(l,"Choose device", -1) 'shoe list with paired devices
+	If res <> DialogResponse.CANCEL Then
+		Serial1.Connect(PairedDevices.Get(l.Get(res))) 'convert the name to mac address
+	End If
+End Sub
+
+Sub mnuDisconnect_Click
+	Serial1.Disconnect
+	connected = False
+	ToastMessageShow("DisConneted Successfully", False)
+End Sub
+
+Sub mnuAbout_Click
+	Msgbox("Blutooth Control program WWW.NET-E.ir Hadi Tadayyon","About")
+End Sub
+
+Sub mnuExit_Click
+	ExitApplication
+End Sub
+
+
+Sub Serial1_Connected (Success As Boolean)	
+	If Success Then
+		ToastMessageShow("Conneted Successfully", False)
+		TextWiter1.Initialize(Serial1.OutputStream)
+		connected =True		
+	Else
+		connected = False
+		ToastMessageShow(LastException.Message,"Error Connecting")
+	End If
+	'for stop firest
+		P_ActionUp
+End Sub
+
+'Sub Activity_Touch (Action As Int,x As Float,y As Float)
+'	Select Action
+'		Case  Activity.ACTION_DOWN
+'			vr =True
+'		Case Activity.ACTION_UP
+'			vr = False
+'	End Select
+'		Label1.Text=vr
+'End Sub
+
+Sub p_UP_Touch (Action As Int, X As Float, Y As Float)
+	'Dim key As Boolean
+	Label1.Text=Action
+	Dim upred As Bitmap
+	upred.Initialize(File.DirAssets,"upred.png")
+	If Action ==0 Then
+		p_UP.Background=upred
+	End If
+	If connected Then
+	TextWiter1.Write("U")'UP
+	TextWiter1.Flush
+	End If
+	
+	If Action=p_UP.ACTION_UP Then
+		P_ActionUp
+	End If
+End Sub
+
+Sub P_Down_Touch (Action As Int, X As Float, Y As Float)
+	If connected Then
+		TextWiter1.Write("D")'Down
+		TextWiter1.Flush
+	End If
+	If Action=P_Down.ACTION_UP Then
+		P_ActionUp
+	End If
+End Sub
+
+Sub p_Left_Touch (Action As Int, X As Float, Y As Float)
+	If connected Then
+		TextWiter1.Write("L")'Left
+		TextWiter1.Flush
+	End If
+	If Action=p_Left.ACTION_UP Then
+		P_ActionUp
+	End If
+End Sub
+
+Sub p_Right_Touch (Action As Int, X As Float, Y As Float)
+	If connected Then
+		TextWiter1.Write("R")'Right
+		TextWiter1.Flush
+	End If
+	If Action=p_Right.ACTION_UP Then
+		P_ActionUp
+	End If
+End Sub
+
+Sub P_ActionUp
+	Dim i As Short
+	If connected Then
+		For i=0 To 5
+			TextWiter1.Write("S")'Stop
+			TextWiter1.Flush
+		Next
+	End If
+End Sub
+
+Sub TBtn1_CheckedChange(Checked As Boolean)
+	Select Checked
+		Case True
+			If connected Then
+				TextWiter1.Write("1")'Right
+				TextWiter1.Flush
+			End If
+		Case False
+			If connected Then
+				TextWiter1.Write("2")'Right
+				TextWiter1.Flush
+			End If
+	End Select
+End Sub
+
+Sub TBtn2_CheckedChange(Checked As Boolean)
+	Select Checked
+		Case True
+			If connected Then
+				TextWiter1.Write("3")'Right
+				TextWiter1.Flush
+			End If
+		Case False
+			If connected Then
+				TextWiter1.Write("4")'Right
+				TextWiter1.Flush
+			End If
+	End Select
+End Sub
